@@ -3,25 +3,25 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"server/services"
 
+	"github.com/beego/beego/v2/client/orm"
 	"github.com/gorilla/mux"
 )
 
 func DeleteMovieHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+	o := orm.NewOrm()
 	vars := mux.Vars(r)
 	id := vars["id"]
-	if id == "" {
-		http.Error(w, "Id Parameter Required", http.StatusBadRequest)
+	num, err := o.QueryTable("movie").Filter("id", id).Delete()
+	if err != nil {
+		http.Error(w, "Failed to delete the movie", http.StatusInternalServerError)
 		return
 	}
-	validId := services.FindId(movies, id)
-	if !validId {
-		http.Error(w, "There is no Movie with this ID", http.StatusBadRequest)
+	if num == 0 {
+		http.Error(w, "Movie not found", http.StatusNotFound)
 		return
 	}
-	services.DeleteMovieById(movies, id)
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(map[string]string{"Message": "Movie Deleted"})
+	json.NewEncoder(w).Encode(map[string]string{"Message": "Movie Deleted Successfully"})
 }
